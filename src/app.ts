@@ -4,6 +4,7 @@ import healthCheckRouter from "./routes/healthCheck.route.js";
 import userRouter from "./routes/user.route.js";
 export function buildApp() {
   const app = express();
+  app.use(express.json());
 
   app.get("/", (req: Request, res: Response) => {
     res.send("hello world");
@@ -12,7 +13,6 @@ export function buildApp() {
   app.use("/user", userRouter);
 
   // Посредник для разбора (парсинга) JSON
-  app.use(express.json());
 
   return app;
 }

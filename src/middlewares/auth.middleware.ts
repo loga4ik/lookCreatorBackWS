@@ -1,14 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import jwtSecret from "~/config/checkEnv.js";
-
-
-if (!jwtSecret) {
-  // Падаем сразу при старте сервера, а не в рантайме на первом запросе —
-  // так забытый .env заметят сразу, а не через день дебага.
-  throw new Error("JWT_SECRET не задан в .env");
-}
-
+import { env } from "~/config/checkEnv.js";
 
 /**
  * Проверяет JWT из httpOnly-cookie "token" на каждом запросе к защищённым роутам.
@@ -24,7 +16,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    const payload = jwt.verify(token, jwtSecret);
+    const payload = jwt.verify(token, env.JWT_SECRET);
     if (typeof payload === "string" || typeof payload.id !== "number") {
       res.status(401).json({ message: "Невалидный или истёкший токен" });
       return;

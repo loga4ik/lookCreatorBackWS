@@ -7,6 +7,30 @@ datasource db {
   provider = "postgresql"
 }
 
+// Анатомическая точка крепления вещи (нужна для фильтра в UI и позже -
+// для размещения вещей лука на 3D-модели). Таблица, а не enum: так можно
+// хранить человекочитаемое имя и правило "сколько вещей этой зоны можно
+// в одном луке" как данные, а не хардкодить в коде.
+model BodyZone {
+  id            Int     @id @default(autoincrement())
+  code          String  @unique // "TORSO_OUTER" - стабильный ключ для кода
+  displayName   String // "Верх (наружный слой)" - для интерфейса
+  allowMultiple Boolean @default(false) // можно ли несколько вещей этой зоны в одном луке
+  sortOrder     Int     @default(0)
+
+  categories Category[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  zoneId    Int
+  zone      BodyZone @relation(fields: [zoneId], references: [id])
+  sortOrder Int      @default(0)
+
+  wardrobeItems WardrobeItem[]
+}
+
 model User {
   id       Int    @id @default(autoincrement())
   login    String @unique
@@ -20,4 +44,86 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  wardrobeItems WardrobeItem[]
+  looks         Look[]
+  likes         Like[]
+
+  following Follow[] @relation("Following") // на кого подписан я
+  followers Follow[] @relation("Followers") // кто подписан на меня
+}
+
+model WardrobeItem {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  imageUrl String
+  color    String?
+  name     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lookItems LookItem[]
+
+  @@index([userId])
+  @@index([categoryId])
+}
+
+model Look {
+  id      Int     @id @default(autoincrement())
+  userId  Int
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caption String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items LookItem[]
+  likes Like[]
+
+  @@index([userId])
+}
+
+model LookItem {
+  id Int @id @default(autoincrement())
+
+  lookId Int
+  look   Look @relation(fields: [lookId], references: [id], onDelete: Cascade)
+
+  wardrobeItemId Int
+  wardrobeItem   WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
+
+  @@unique([lookId, wardrobeItemId])
+}
+
+model Like {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lookId Int
+  look   Look @relation(fields: [lookId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, lookId])
+  @@index([lookId])
+}
+
+model Follow {
+  followerId Int
+  follower   User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId Int
+  following   User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([followerId, followingId])
 }

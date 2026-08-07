@@ -1,7 +1,6 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
-
-
+import { defineConfig } from "prisma/config";
+import { env } from "./src/config/checkEnv";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -11,6 +10,6 @@ export default defineConfig({
   },
 
   datasource: {
-    url: env("DATABASE_URL"),
+    url: env.DATABASE_URL,
   },
 });

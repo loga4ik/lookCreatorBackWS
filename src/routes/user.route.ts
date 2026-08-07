@@ -1,6 +1,9 @@
 import { Router, type Request, type Response } from "express";
 import { prisma } from "~/prisma/client.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import "dotenv/config";
+import jwtSecret from "~/config/checkEnv.js";
 
 const router = Router();
 router.get("/", async (req: Request, res: Response) => {
@@ -23,7 +26,8 @@ router.post("/create", async (req: Request, res: Response) => {
     const user = await prisma.user.create({
       data: { ...req.body, password: hash },
     });
-    console.log(user);
+    const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "7d" });
+    res.cookie("token", token);
     res.json(user);
   } catch (err) {
     console.error(err);
@@ -57,6 +61,10 @@ router.post("/auth", async (req: Request, res: Response) => {
     if (!isValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "7d" });
+    res.cookie("token", token);
+
     res.json(user);
   } catch (err) {
     console.error(err);
